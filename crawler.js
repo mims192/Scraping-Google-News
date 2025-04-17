@@ -7,7 +7,7 @@ export async function scrapeNews(stock) {
 
   const browser = await puppeteer.launch({
     headless: true,
-    
+    args: ['--no-sandbox']
   });
   
   const page = await browser.newPage();
@@ -15,13 +15,17 @@ export async function scrapeNews(stock) {
   await page.setExtraHTTPHeaders({
     'accept-language': 'en-US,en;q=0.9',
   });
-  
+  const allArticles = [];
+
   try {
     
     await page.goto(url, { waitUntil: 'networkidle2', timeout: 60000 });
+    let lastPageReached = false;
+    let pageCounter = 1;
+    while (!lastPageReached && pageCounter <= 2) {
      const articles = await page.evaluate((stockSymbol) => {
       const results = [];
-
+     
      
       document.querySelectorAll('div.SoaBEf').forEach((newsItem) => {
        
@@ -43,10 +47,29 @@ export async function scrapeNews(stock) {
       return results;
     },stock);
 
-    console.log(`Found ${articles.length} articles`);
-    console.log(articles);
+    allArticles.push(...articles);
+    
+    if (pageCounter === 2) {
+    console.log('Reached page 2. Stopping.');
+    break;
+    }
 
-    return articles;
+    const nextPageLink = await page.$('a#pnnext');
+
+    if (!nextPageLink) {
+      console.log('No more pages. Exiting.');
+      lastPageReached = true;
+    } else {
+      console.log('Navigating to next page...');
+      await nextPageLink.click();
+      await page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 60000 });
+      console.log(`Current URL: ${page.url()}`);
+      pageCounter++;
+    }
+  }
+
+  console.log(`Total articles scraped: ${allArticles.length}`);
+  return allArticles;
   } catch (error) {
     console.error('Error during scraping:', error);
     return [];
@@ -77,11 +100,11 @@ export async function saveNews(articles) {
       await newArticle.save();
       
     } catch (error) {
-      if (error.code === 11000) {
-      console.warn(`Duplicate article skipped: "${article.title}"`);
-      } else {
+      if (error.code !== 11000) {
         console.error(`Error saving article "${article.title}":`, error.message);
-      }
+      } 
+        
+      
     }
   }
 }
