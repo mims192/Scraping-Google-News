@@ -1,0 +1,40 @@
+name: Run Stock News Scraper
+
+on:
+  schedule:
+    - cron: "0 3 * * *" 
+  workflow_dispatch:    
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+
+      - name: Install Puppeteer dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libxss1 \
+            libasound2 \
+            libnss3 \
+            libatk-bridge2.0-0 \
+            libgtk-3-0 \
+            libgbm-dev
+
+      - name: Install project dependencies
+        run: npm install
+
+      - name: Create .env file from GitHub Secrets
+        run: |
+          echo "URI='${{ secrets.URI }}'" >> .env
+
+      - name: Run scraper
+        run: npm start
