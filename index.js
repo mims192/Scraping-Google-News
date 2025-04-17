@@ -45,8 +45,6 @@ mongoose.connect(process.env.URI,{})
   
 });
 
-
-
 app.use(express.json());
 
 

@@ -104,8 +104,6 @@ export async function saveNews(articles) {
       if (error.code !== 11000) {
         console.error(`Error saving article "${article.title}":`, error.message);
       } 
-        
-      
     }
   }
 }
