@@ -33,9 +33,8 @@ jobs:
         run: npm install
 
       - name: Create .env file from GitHub Secrets
-        run: echo "URI=$URI" > .env
-        env:
-          URI: ${{ secrets.URI }}
+        run: echo "URI=${{ secrets.URI }}" > .env
+        
 
       - name: Run scraper
         run: npm start
